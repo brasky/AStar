@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Roy_T.AStar.Graphs;
 using Roy_T.AStar.Primitives;
 
@@ -8,6 +9,7 @@ namespace Roy_T.AStar.Grids
     public sealed class Grid
     {
         private readonly Node[,] Nodes;
+        private Velocity _maxVelocity = Velocity.FromMetersPerSecond(-1);
 
         public static Grid CreateGridWithLateralConnections(GridSize gridSize, Size cellSize, Velocity traversalVelocity)
         {
@@ -169,21 +171,26 @@ namespace Roy_T.AStar.Grids
 
         public int Rows => this.GridSize.Rows;
 
-        public INode GetNode(GridPosition position) => this.Nodes[position.X, position.Y];
+        public Node GetNode(GridPosition position) => this.Nodes[position.X, position.Y];
 
-        public IReadOnlyList<INode> GetAllNodes()
+        public Velocity GetMaxTraversalVelocity()
         {
-            var list = new List<INode>(this.Columns * this.Rows);
+            if (_maxVelocity.MetersPerSecond > 0) return _maxVelocity;
 
-            for (var x = 0; x < this.Columns; x++)
+            var max = Velocity.FromKilometersPerHour(0);
+            foreach (var node in Nodes)
             {
-                for (var y = 0; y < this.Rows; y++)
+                if (node.Outgoing.Count == 0) continue;
+
+                var nodeOutgoingMax = node.Outgoing.Select(o => o.TraversalVelocity).Max();
+                if (nodeOutgoingMax > max)
                 {
-                    list.Add(this.Nodes[x, y]);
+                    max = nodeOutgoingMax;
                 }
             }
 
-            return list;
+            _maxVelocity = max;
+            return _maxVelocity;
         }
 
         public void DisconnectNode(GridPosition position)

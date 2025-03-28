@@ -1,4 +1,8 @@
 ﻿using System;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Diagnosers;
+using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 
 namespace Roy_T.AStar.Benchmark
@@ -7,7 +11,8 @@ namespace Roy_T.AStar.Benchmark
     {
         static void Main(string[] _)
         {
-            BenchmarkRunner.Run<AStarBenchmark>();
+            var config = DefaultConfig.Instance.AddJob(Job.ShortRun);
+            BenchmarkRunner.Run<AStarBenchmark>(config);
             Console.ReadLine();
         }
     }

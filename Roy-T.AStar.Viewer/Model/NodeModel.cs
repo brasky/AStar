@@ -8,14 +8,14 @@ namespace Roy_T.AStar.Viewer.Model
     {
         private NodeState nodeState;
 
-        public NodeModel(INode node, GridPosition gridPosition)
+        public NodeModel(Node node, GridPosition gridPosition)
         {
             this.Node = node;
             this.GridPosition = gridPosition;
             this.nodeState = NodeState.None;
         }
 
-        public INode Node { get; }
+        public Node Node { get; }
         public GridPosition GridPosition { get; }
 
         public float X => this.Node.Position.X;

@@ -6,7 +6,7 @@ namespace Roy_T.AStar.Viewer.Model
 {
     internal class EdgeModel : ReactiveObject
     {
-        public EdgeModel(IEdge edge)
+        public EdgeModel(Edge edge)
         {
             this.Edge = edge;
         }
@@ -21,7 +21,7 @@ namespace Roy_T.AStar.Viewer.Model
             }
         }
 
-        public IEdge Edge { get; }
+        public Edge Edge { get; }
 
         public float X1 => this.Edge.Start.Position.X;
         public float Y1 => this.Edge.Start.Position.Y;

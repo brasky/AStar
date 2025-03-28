@@ -59,7 +59,7 @@ namespace Roy_T.AStar.Serialization
 
         private static GridDto ToDto(this Grid grid)
         {
-            var nodeToGridPositionDict = new Dictionary<INode, GridPosition>();
+            var nodeToGridPositionDict = new Dictionary<Node, GridPosition>();
             NodeDto[][] nodes = new NodeDto[grid.Columns][];
             for (int i = 0; i < grid.Columns; i++)
             {
@@ -85,7 +85,7 @@ namespace Roy_T.AStar.Serialization
             };
         }
 
-        private static NodeDto ToDto(this INode node, Dictionary<INode, GridPosition> nodeToGridPositionDict)
+        private static NodeDto ToDto(this Node node, Dictionary<Node, GridPosition> nodeToGridPositionDict)
         {
             return new NodeDto
             {
@@ -96,12 +96,12 @@ namespace Roy_T.AStar.Serialization
             };
         }
 
-        private static List<EdgeDto> ToDto(this IList<IEdge> edge, Dictionary<INode, GridPosition> nodeToGridPositionDict)
+        private static List<EdgeDto> ToDto(this IList<Edge> edge, Dictionary<Node, GridPosition> nodeToGridPositionDict)
         {
             return edge.Select(e => e.ToDto(nodeToGridPositionDict)).ToList();
         }
 
-        private static EdgeDto ToDto(this IEdge edge, Dictionary<INode, GridPosition> nodeToGridPositionDict)
+        private static EdgeDto ToDto(this Edge edge, Dictionary<Node, GridPosition> nodeToGridPositionDict)
         {
             return new EdgeDto
             {

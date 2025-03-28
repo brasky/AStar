@@ -2,11 +2,11 @@
 
 namespace Roy_T.AStar.Graphs
 {
-    public sealed class Edge : IEdge
+    public sealed class Edge
     {
         private Velocity traversalVelocity;
 
-        public Edge(INode start, INode end, Velocity traversalVelocity)
+        public Edge(Node start, Node end, Velocity traversalVelocity)
         {
             this.Start = start;
             this.End = end;
@@ -29,8 +29,8 @@ namespace Roy_T.AStar.Graphs
 
         public Distance Distance { get; }
 
-        public INode Start { get; }
-        public INode End { get; }
+        public Node Start { get; }
+        public Node End { get; }
 
         public override string ToString() => $"{this.Start} -> {this.End} @ {this.TraversalVelocity}";
     }

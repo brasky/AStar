@@ -4,9 +4,9 @@ using Roy_T.AStar.Primitives;
 
 namespace Roy_T.AStar.Paths
 {
-    public sealed class Path
+    public struct Path
     {
-        public Path(PathType type, IReadOnlyList<IEdge> edges)
+        public Path(PathType type, IReadOnlyList<Edge> edges)
         {
             this.Type = type;
             this.Edges = edges;
@@ -22,7 +22,7 @@ namespace Roy_T.AStar.Paths
 
         public Duration Duration { get; }
 
-        public IReadOnlyList<IEdge> Edges { get; }
+        public IReadOnlyList<Edge> Edges { get; }
         public Distance Distance { get; }
     }
 }

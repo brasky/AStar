@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using Roy_T.AStar.Collections;
 using Roy_T.AStar.Graphs;
 using Roy_T.AStar.Grids;
 using Roy_T.AStar.Primitives;
@@ -9,26 +7,22 @@ namespace Roy_T.AStar.Paths
 {
     public sealed class PathFinder
     {
-        private readonly MinHeap<PathFinderNode> Interesting;
-        private readonly Dictionary<INode, PathFinderNode> Nodes;
-        private readonly PathReconstructor PathReconstructor;
+        private readonly PriorityQueue<Node, float> InterestingNodes;
+        private readonly Dictionary<Node, Edge> CameFrom;
 
-        private PathFinderNode NodeClosestToGoal;
+        
 
         public PathFinder()
         {
-            this.Interesting = new MinHeap<PathFinderNode>();
-            this.Nodes = new Dictionary<INode, PathFinderNode>();
-            this.PathReconstructor = new PathReconstructor();
+            this.InterestingNodes = new PriorityQueue<Node, float>();
+            this.CameFrom = new Dictionary<Node, Edge>();
         }
 
         public Path FindPath(GridPosition start, GridPosition end, Grid grid)
         {
             var startNode = grid.GetNode(start);
             var endNode = grid.GetNode(end);
-
-            var maximumVelocity = grid.GetAllNodes().SelectMany(n => n.Outgoing).Select(e => e.TraversalVelocity).Max();
-
+            var maximumVelocity = grid.GetMaxTraversalVelocity();
             return this.FindPath(startNode, endNode, maximumVelocity);
         }
 
@@ -40,85 +34,75 @@ namespace Roy_T.AStar.Paths
             return this.FindPath(startNode, endNode, maximumVelocity);
         }
 
-        public Path FindPath(INode start, INode goal, Velocity maximumVelocity)
+        public Path FindPath(Node start, Node goal, Velocity maximumVelocity)
         {
-            this.ResetState();
-            this.AddFirstNode(start, goal, maximumVelocity);
+            InterestingNodes.Clear();
+            this.CameFrom.Clear();
+            Node NodeClosestToGoal = start;
+            Duration closestNodeExpectedTime = ExpectedDuration(start, goal, maximumVelocity);
 
-            while (this.Interesting.Count > 0)
+            InterestingNodes.Enqueue(start, ExpectedDuration(start, goal, maximumVelocity).Seconds);
+            start.Visited = true;
+
+            while (this.InterestingNodes.TryDequeue(out var current, out var totalCost))
             {
-                var current = this.Interesting.Extract();
-                if (GoalReached(goal, current))
+                if (current == goal)
                 {
-                    return this.PathReconstructor.ConstructPathTo(current.Node, goal);
+                    return ConstructPathTo(current, goal);
                 }
 
-                this.UpdateNodeClosestToGoal(current);
-
-                foreach (var edge in current.Node.Outgoing)
+                if (ExpectedDuration(current, goal, maximumVelocity) < closestNodeExpectedTime)
                 {
-                    var oppositeNode = edge.End;
-                    var costSoFar = current.DurationSoFar + edge.TraversalDuration;
+                    NodeClosestToGoal = current;
+                    closestNodeExpectedTime = ExpectedDuration(current, goal, maximumVelocity);
+                }
 
-                    if (this.Nodes.TryGetValue(oppositeNode, out var node))
+                foreach (var edge in current.Outgoing)
+                {
+                    var nextNode = edge.End;
+                    var costSoFar = current.CostSoFar + edge.TraversalDuration.Seconds;
+                    if (nextNode.Visited)
                     {
-                        this.UpdateExistingNode(goal, maximumVelocity, current, edge, oppositeNode, costSoFar, node);
+                        if (nextNode.CostSoFar > costSoFar)
+                        {
+                            InterestingNodes.Remove(nextNode, out _, out _);
+                            this.CameFrom[nextNode] = edge;
+                            nextNode.CostSoFar = costSoFar;
+                            InterestingNodes.Enqueue(nextNode, costSoFar + ExpectedDuration(nextNode, goal, maximumVelocity).Seconds);
+                            nextNode.Visited = true;
+                        }
                     }
                     else
                     {
-                        this.InsertNode(oppositeNode, edge, goal, costSoFar, maximumVelocity);
+                        this.CameFrom[nextNode] = edge;
+                        nextNode.CostSoFar += costSoFar;
+                        InterestingNodes.Enqueue(nextNode, costSoFar + ExpectedDuration(nextNode, goal, maximumVelocity).Seconds);
+                        nextNode.Visited = true;
                     }
                 }
             }
 
-            return this.PathReconstructor.ConstructPathTo(this.NodeClosestToGoal.Node, goal);
+            return ConstructPathTo(NodeClosestToGoal, goal);
         }
 
-        private void ResetState()
+        private Path ConstructPathTo(Node node, Node goal)
         {
-            this.Interesting.Clear();
-            this.Nodes.Clear();
-            this.PathReconstructor.Clear();
-            this.NodeClosestToGoal = null;
-        }
+            var current = node;
+            var edges = new List<Edge>();
 
-        private void AddFirstNode(INode start, INode goal, Velocity maximumVelocity)
-        {
-            var head = new PathFinderNode(start, Duration.Zero, ExpectedDuration(start, goal, maximumVelocity));
-            this.Interesting.Insert(head);
-            this.Nodes.Add(head.Node, head);
-            this.NodeClosestToGoal = head;
-        }
-
-        private static bool GoalReached(INode goal, PathFinderNode current) => current.Node == goal;
-
-        private void UpdateNodeClosestToGoal(PathFinderNode current)
-        {
-            if (current.ExpectedRemainingTime < this.NodeClosestToGoal.ExpectedRemainingTime)
+            while (this.CameFrom.TryGetValue(current, out var via))
             {
-                this.NodeClosestToGoal = current;
+                edges.Add(via);
+                current = via.Start;
             }
+
+            edges.Reverse();
+
+            var type = node == goal ? PathType.Complete : PathType.ClosestApproach;
+            return new Path(type, edges);
         }
 
-        private void UpdateExistingNode(INode goal, Velocity maximumVelocity, PathFinderNode current, IEdge edge, INode oppositeNode, Duration costSoFar, PathFinderNode node)
-        {
-            if (node.DurationSoFar > costSoFar)
-            {
-                this.Interesting.Remove(node);
-                this.InsertNode(oppositeNode, edge, goal, costSoFar, maximumVelocity);
-            }
-        }
-
-        private void InsertNode(INode current, IEdge via, INode goal, Duration costSoFar, Velocity maximumVelocity)
-        {
-            this.PathReconstructor.SetCameFrom(current, via);
-
-            var node = new PathFinderNode(current, costSoFar, ExpectedDuration(current, goal, maximumVelocity));
-            this.Interesting.Insert(node);
-            this.Nodes[current] = node;
-        }
-
-        public static Duration ExpectedDuration(INode a, INode b, Velocity maximumVelocity)
+        public static Duration ExpectedDuration(Node a, Node b, Velocity maximumVelocity)
             => Distance.BeweenPositions(a.Position, b.Position) / maximumVelocity;
     }
 }

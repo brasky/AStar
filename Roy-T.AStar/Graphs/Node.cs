@@ -3,29 +3,32 @@ using Roy_T.AStar.Primitives;
 
 namespace Roy_T.AStar.Graphs
 {
-    public sealed class Node : INode
+    public class Node 
     {
         public Node(Position position)
         {
-            this.Incoming = new List<IEdge>(0);
-            this.Outgoing = new List<IEdge>(0);
+            this.Incoming = new List<Edge>(0);
+            this.Outgoing = new List<Edge>(0);
 
             this.Position = position;
         }
 
-        public IList<IEdge> Incoming { get; }
-        public IList<IEdge> Outgoing { get; }
+        public IList<Edge> Incoming { get; }
+        public IList<Edge> Outgoing { get; }
 
         public Position Position { get; }
 
-        public void Connect(INode node, Velocity traversalVelocity)
+        public float CostSoFar { get; set; } = 0f;
+        public bool Visited { get; set; } = false;
+
+        public void Connect(Node node, Velocity traversalVelocity)
         {
             var edge = new Edge(this, node, traversalVelocity);
             this.Outgoing.Add(edge);
             node.Incoming.Add(edge);
         }
 
-        public void Disconnect(INode node)
+        public void Disconnect(Node node)
         {
             for (var i = this.Outgoing.Count - 1; i >= 0; i--)
             {

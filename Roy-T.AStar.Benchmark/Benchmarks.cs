@@ -8,20 +8,28 @@ namespace Roy_T.AStar.Benchmark
     /// <summary>
     /// For more thorough explanation, and benchmark history, see BenchmarkHistory.md
     /// </summary>
+    
+    [MemoryDiagnoser]
     public class AStarBenchmark
     {
-        private static readonly Velocity MaxSpeed = Velocity.FromKilometersPerHour(100);
+        private static readonly Velocity MaxSpeed = Velocity.FromMetersPerSecond(1);
 
-        private readonly PathFinder PathFinder;
+        private PathFinder PathFinder;
 
-        private readonly Grid Grid;
-        private readonly Grid GridWithGradient;
-        private readonly Grid GridWithHole;
-        private readonly Grid GridWithRandomLimits;
-        private readonly Grid GridWithRandomHoles;
-        private readonly Grid GridWithUnreachableTarget;
+        private Grid Grid;
+        private Grid GridWithGradient;
+        private Grid GridWithHole;
+        private Grid GridWithRandomLimits;
+        private Grid GridWithRandomHoles;
+        private Grid GridWithUnreachableTarget;
 
         public AStarBenchmark()
+        {
+
+        }
+
+        [GlobalSetup]
+        public void Setup()
         {
             this.PathFinder = new PathFinder();
 
@@ -47,55 +55,63 @@ namespace Roy_T.AStar.Benchmark
         }
 
         [Benchmark]
-        public void GridBench()
+        public Grid CreatingGrid()
         {
-            this.PathFinder.FindPath(
+            var gridSize = new GridSize(100, 100);
+            var cellSize = new Size(Distance.FromMeters(1), Distance.FromMeters(1));
+            return Grid.CreateGridWithLateralAndDiagonalConnections(gridSize, cellSize, MaxSpeed);
+        }
+
+        [Benchmark]
+        public Path GridBench()
+        {
+            return this.PathFinder.FindPath(
                 this.Grid.GetNode(GridPosition.Zero),
                 this.Grid.GetNode(new GridPosition(this.Grid.Columns - 1, this.Grid.Rows - 1)),
                 MaxSpeed);
         }
 
         [Benchmark]
-        public void GridWithHoleBench()
+        public Path GridWithHoleBench()
         {
-            this.PathFinder.FindPath(
+            return this.PathFinder.FindPath(
                 this.GridWithHole.GetNode(GridPosition.Zero),
                 this.GridWithHole.GetNode(new GridPosition(this.GridWithHole.Columns - 1, this.GridWithHole.Rows - 1)),
                 MaxSpeed);
         }
 
         [Benchmark]
-        public void GridWithRandomHolesBench()
+        public Path GridWithRandomHolesBench()
         {
-            this.PathFinder.FindPath(
+            return this.PathFinder.FindPath(
                 this.GridWithRandomHoles.GetNode(GridPosition.Zero),
                 this.GridWithRandomHoles.GetNode(new GridPosition(this.GridWithRandomHoles.Columns - 1, this.GridWithRandomHoles.Rows - 1)),
                 MaxSpeed);
         }
 
         [Benchmark]
-        public void GridWithRandomLimitsBench()
+        public Path GridWithRandomLimitsBench()
         {
-            this.PathFinder.FindPath(
+            return this.PathFinder.FindPath(
                 this.GridWithRandomLimits.GetNode(GridPosition.Zero),
                 this.GridWithRandomLimits.GetNode(new GridPosition(this.GridWithRandomLimits.Columns - 1, this.GridWithRandomLimits.Rows - 1)),
                 MaxSpeed);
         }
 
         [Benchmark]
-        public void GridWithUnreachableTargetBench()
+        public Path GridWithUnreachableTargetBench()
         {
-            this.PathFinder.FindPath(
+            return this.PathFinder.FindPath(
                 this.GridWithUnreachableTarget.GetNode(GridPosition.Zero),
                 this.GridWithUnreachableTarget.GetNode(new GridPosition(this.GridWithUnreachableTarget.Columns - 1, this.GridWithUnreachableTarget.Rows - 1)),
                 MaxSpeed);
         }
 
         [Benchmark]
-        public void GridWithGradientBench()
+        public Path GridWithGradientBench()
         {
             var maxSpeed = Velocity.FromKilometersPerHour((this.GridWithGradient.Rows * this.GridWithGradient.Columns) + 1);
-            this.PathFinder.FindPath(
+            return this.PathFinder.FindPath(
                 this.GridWithGradient.GetNode(GridPosition.Zero),
                 this.GridWithGradient.GetNode(new GridPosition(this.GridWithGradient.Columns - 1, this.GridWithGradient.Rows - 1)),
                 maxSpeed);
